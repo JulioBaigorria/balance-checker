@@ -2,8 +2,10 @@ import pandas as pd
 import os
 import time
 import pandas as pd
-import numpy as np
+import warnings
 
+
+warnings.simplefilter("ignore")
 # Constants
 DATE_FORMAT = "%d-%m-%Y"
 FLOAT_FORMAT = '%.3f'
@@ -33,19 +35,20 @@ newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
 
 # Importando DataFrames
 
-imputaciones_df: pd.DataFrame = pd.read_csv(newest_imputaciones_file, sep=';', encoding='ISO8859-1', date_format=DATE_FORMAT)
+imputaciones_df: pd.DataFrame = pd.read_csv(newest_imputaciones_file, sep=';', encoding='ISO8859-1', date_format=DATE_FORMAT, dtype=str)
 percepciones_df: pd.DataFrame = pd.read_excel(newest_percepciones_file, skiprows=2)
 retenciones_df: pd.DataFrame = pd.read_excel(newest_retenciones_file, skiprows=2)
 
-
+    
 # Procesando imputaciones_df
 
-imputaciones_df.dtypes
+imputaciones_df['Debe'].dtypes
 
 imputaciones_df['Emisión'] = pd.to_datetime(imputaciones_df['Emisión'], format="%d-%m-%Y")
 
 imputaciones_df = imputaciones_df.sort_values(by='Emisión')
-imputaciones_df[['Debe', 'Haber']] = imputaciones_df[['Debe', 'Haber']].map(lambda x : float(x.replace('.','').replace(',','.')))
+imputaciones_df[['Debe', 'Haber']] = imputaciones_df[['Debe', 'Haber']].map(lambda x : float(str(x).replace('.','').replace(',','.')))
+
 
 imputaciones_df.to_excel('imputaciones_limpio.xlsx', index=False)
 
