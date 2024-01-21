@@ -39,18 +39,25 @@ def get_newest_file(file_prefix):
     return max(files, key=lambda f: os.path.getmtime(os.path.join(INPUT_DIR, f)))
 
 newest_imputaciones_file = get_newest_file(FILE_PREFIXES['imputaciones'])
+imputaciones_df: pd.DataFrame = pd.read_csv(newest_imputaciones_file, sep=';', encoding='ISO8859-1', date_format=DATE_FORMAT)
+match_df: pd.DataFrame = None
 
-
-# Verificar la opción elegida por el usuario
-if 1 <= choice <= len(OPTION_PREFIXES):
-    selected_option = list(OPTION_PREFIXES.keys())[choice - 1]
-    
-    newest_other_file = get_newest_file(OPTION_PREFIXES[selected_option])    
-    print(f"El archivo más reciente para {selected_option} es: {newest_other_file}")
-else:
-    print("Opción no válida. Por favor, elige un número válido.")
-    
-print(newest_other_file)
+match choice:
+    case 1:
+        newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
+        imputaciones_df = pd.read_csv(newest_imputaciones_file, sep=';', encoding='ISO8859-1', date_format=DATE_FORMAT)
+    case 2:
+        newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
+        retenciones_df = pd.read_excel(newest_retenciones_file, skiprows=2)
+    case 3:
+        newest_arba_file = get_newest_file(FILE_PREFIXES['arba'])
+    case 4:
+        newest_santafe_file = get_newest_file(FILE_PREFIXES['santafe'])
+        
+    case 5:
+        newest_ganancias_file = get_newest_file(FILE_PREFIXES['ganancias'])
+    case 6:
+        newest_sicore_file = get_newest_file(FILE_PREFIXES['sicore'])
 
 
 # Timer start
@@ -59,18 +66,18 @@ start = time.time()
 
 
 """newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
-newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
-newest_arba_file = get_newest_file(FILE_PREFIXES['arba'])
+
+
 newest_santafe_file = get_newest_file(FILE_PREFIXES['santafe'])
-newest_ganancias_file = get_newest_file(FILE_PREFIXES['ganancias'])
-newest_sicore_file = get_newest_file(FILE_PREFIXES['sicore'])"""
+
+"""
 
 
 # Importando DataFrames
 
-imputaciones_df: pd.DataFrame = pd.read_csv(newest_imputaciones_file, sep=';', encoding='ISO8859-1', date_format=DATE_FORMAT)
+
 percepciones_df: pd.DataFrame = pd.read_excel(newest_percepciones_file, skiprows=2)
-retenciones_df: pd.DataFrame = pd.read_excel(newest_retenciones_file, skiprows=2)
+
 
     
 # Procesando imputaciones_df
