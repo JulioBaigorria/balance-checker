@@ -1,11 +1,10 @@
-import pandas as pd
 import os
 import time
-import pandas as pd
 import warnings
-
+import pandas as pd
 
 warnings.simplefilter("ignore")
+
 # Constants
 DATE_FORMAT = "%d-%m-%Y"
 FLOAT_FORMAT = '%.3f'
@@ -15,27 +14,61 @@ FILE_PREFIXES = {
     'imputaciones': 'imputacionesPo',
     'percepciones': 'SrcPercepciones',
     'retenciones': 'SrcRetenciones',
+    'arba': 'ARBA',
+    'santafe': 'COPRIB - IIBB RET',
+    'ganancias': 'GANANCIAS SUFRIDAS',
+    'sicore': 'SICORE RET Y PERC IVA',
 }
+
 FILE_EXTENSIONS = '.csv'
 FILE_EXTENSIONS2 = '.xlsx'
-# Timer start
-start = time.time()
+FILE_EXTENSIONS3 = '.xls'
 
-# Funcion para hacer dinamica la importacion de excel y csv
+OPTION_PREFIXES = {key: value for key, value in FILE_PREFIXES.items() if key != 'imputaciones'}
+print("Elige una opción:")
+for idx, option in enumerate(OPTION_PREFIXES.keys(), 1):
+    print(f"{idx}. {option}")
 
+choice = int(input("Opción: "))
+
+# Dynamic function to get the latest needed files. 
 def get_newest_file(file_prefix):
     files = os.listdir(INPUT_DIR)
     files = [file for file in files if file.startswith(
-        file_prefix) and (file.endswith(FILE_EXTENSIONS) or file.endswith(FILE_EXTENSIONS2))]
+        file_prefix) and (file.endswith(FILE_EXTENSIONS) or file.endswith(FILE_EXTENSIONS2) or file.endswith(FILE_EXTENSIONS3))]
     return max(files, key=lambda f: os.path.getmtime(os.path.join(INPUT_DIR, f)))
 
 newest_imputaciones_file = get_newest_file(FILE_PREFIXES['imputaciones'])
-newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
+
+
+# Verificar la opción elegida por el usuario
+if 1 <= choice <= len(OPTION_PREFIXES):
+    selected_option = list(OPTION_PREFIXES.keys())[choice - 1]
+    
+    newest_other_file = get_newest_file(OPTION_PREFIXES[selected_option])    
+    print(f"El archivo más reciente para {selected_option} es: {newest_other_file}")
+else:
+    print("Opción no válida. Por favor, elige un número válido.")
+    
+print(newest_other_file)
+
+
+# Timer start
+start = time.time()
+
+
+
+"""newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
 newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
+newest_arba_file = get_newest_file(FILE_PREFIXES['arba'])
+newest_santafe_file = get_newest_file(FILE_PREFIXES['santafe'])
+newest_ganancias_file = get_newest_file(FILE_PREFIXES['ganancias'])
+newest_sicore_file = get_newest_file(FILE_PREFIXES['sicore'])"""
+
 
 # Importando DataFrames
 
-imputaciones_df: pd.DataFrame = pd.read_csv(newest_imputaciones_file, sep=';', encoding='ISO8859-1', date_format=DATE_FORMAT, dtype=str)
+imputaciones_df: pd.DataFrame = pd.read_csv(newest_imputaciones_file, sep=';', encoding='ISO8859-1', date_format=DATE_FORMAT)
 percepciones_df: pd.DataFrame = pd.read_excel(newest_percepciones_file, skiprows=2)
 retenciones_df: pd.DataFrame = pd.read_excel(newest_retenciones_file, skiprows=2)
 
