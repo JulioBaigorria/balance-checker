@@ -1,4 +1,4 @@
-import os
+"""import os
 import time
 import warnings
 import pandas as pd
@@ -40,7 +40,7 @@ def get_newest_file(file_prefix):
 
 newest_imputaciones_file = get_newest_file(FILE_PREFIXES['imputaciones'])
 imputaciones_df: pd.DataFrame = pd.read_csv(newest_imputaciones_file, sep=';', encoding='ISO8859-1', date_format=DATE_FORMAT)
-match_df: pd.DataFrame = None
+match_df: pd.DataFrame = pd.DataFrame()
 
 match choice:
     case 1:
@@ -64,13 +64,12 @@ match choice:
 start = time.time()
 
 
-
-"""newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
+newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
 
 
 newest_santafe_file = get_newest_file(FILE_PREFIXES['santafe'])
 
-"""
+
 
 
 # Importando DataFrames
@@ -137,3 +136,5 @@ except BaseException as e:
 
 time.sleep(1)
 print(f'{time.time() - start}')
+
+"""
