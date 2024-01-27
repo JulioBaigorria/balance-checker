@@ -1,4 +1,4 @@
-"""import os
+import os
 import time
 import warnings
 import pandas as pd
@@ -24,117 +24,200 @@ FILE_EXTENSIONS = '.csv'
 FILE_EXTENSIONS2 = '.xlsx'
 FILE_EXTENSIONS3 = '.xls'
 
-OPTION_PREFIXES = {key: value for key, value in FILE_PREFIXES.items() if key != 'imputaciones'}
+OPTION_PREFIXES = {key: value for key,
+                   value in FILE_PREFIXES.items() if key != 'imputaciones'}
 print("Elige una opción:")
 for idx, option in enumerate(OPTION_PREFIXES.keys(), 1):
     print(f"{idx}. {option}")
 
 choice = int(input("Opción: "))
 
-# Dynamic function to get the latest needed files. 
+# Dynamic function to get the latest needed files.
+
+
 def get_newest_file(file_prefix):
     files = os.listdir(INPUT_DIR)
     files = [file for file in files if file.startswith(
         file_prefix) and (file.endswith(FILE_EXTENSIONS) or file.endswith(FILE_EXTENSIONS2) or file.endswith(FILE_EXTENSIONS3))]
     return max(files, key=lambda f: os.path.getmtime(os.path.join(INPUT_DIR, f)))
 
+# Functions for handling DFs
+# Handling Imputaciones' file
+
+
+def handle_imputaciones_df(imputaciones_df: pd.DataFrame) -> pd.DataFrame:
+    imputaciones_df[['Debe', 'Haber']] = imputaciones_df[['Debe', 'Haber']].map(
+        lambda x: float(str(x).replace('.', '').replace(',', '.')))
+    return imputaciones_df
+
+
+def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepciones_df: pd.DataFrame) -> None:
+    start = time.time()
+    # Buscar coincidencias de montos en Debe y Haber
+    coincidencias_per = (percepciones_df['Monto Percibido'].isin(
+        cleaned_imputaciones_df['Debe']) | percepciones_df['Monto Percibido'].isin(cleaned_imputaciones_df['Haber']))
+    no_encontradas_df = percepciones_df[~coincidencias_per]
+    encontradas_df = percepciones_df[coincidencias_per]
+
+    print(f"Cantidad No encontradas:{
+          no_encontradas_df['CUIT'].count()}")  # No estan
+    print(f"Cantidad encontradas:{encontradas_df['CUIT'].count()}")  # No estan
+
+    try:
+        with pd.ExcelWriter('resultados_percepciones.xlsx', engine='openpyxl') as writer:
+            # Sheet para Percepciones No Encontradas
+            no_encontradas_df.to_excel(
+                writer, sheet_name='Perc No Encontradas', index=False)
+
+            # Sheet para Percepciones Encontradas
+            encontradas_df.to_excel(
+                writer, sheet_name='Perc Encontradas', index=False)
+
+            print('Archivos Generados!')
+        time.sleep(1)
+    except BaseException as e:
+        time.sleep(10)
+        raise e
+
+    print(f'Tomó: {int(time.time() - start)} Segundos')
+
+
+def handle_search_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, retenciones_df: pd.DataFrame) -> None:
+    start = time.time()
+    # Buscar coincidencias de montos en Debe y Haber
+    coincidencias_ret = (retenciones_df['Monto Retenido'].isin(cleaned_imputaciones_df['Debe']) |
+                         retenciones_df['Monto Retenido'].isin(cleaned_imputaciones_df['Haber']))
+
+    no_encontradas_df = retenciones_df[~coincidencias_ret]
+    encontradas_df = retenciones_df[coincidencias_ret]
+
+    print(f"Cantidad No encontradas:{
+          no_encontradas_df['CUIT'].count()}")  # No estan
+    print(f"Cantidad encontradas:{encontradas_df['CUIT'].count()}")  # No estan
+
+    try:
+        with pd.ExcelWriter('resultados_retenciones.xlsx', engine='openpyxl') as writer:
+            # Sheet para Percepciones No Encontradas
+            no_encontradas_df.to_excel(
+                writer, sheet_name='Ret No Encontradas', index=False)
+
+            # Sheet para Percepciones Encontradas
+            encontradas_df.to_excel(
+                writer, sheet_name='Ret Encontradas', index=False)
+
+            print('Archivos Generados!')
+        time.sleep(1)
+    except BaseException as e:
+        time.sleep(10)
+        raise e
+
+    print(f'Tomó: {int(time.time() - start)} Segundos')
+
+
+def handle_search_arba_df(cleaned_imputaciones_df: pd.DataFrame, arba_df: pd.DataFrame) -> None:
+    start = time.time()
+    arba_df.describe()
+
+    coincidencias_arba = (arba_df['monto'].isin(cleaned_imputaciones_df['Debe']) |
+                          arba_df['monto'].isin(cleaned_imputaciones_df['Haber']))
+
+    no_encontradas_df = arba_df[~coincidencias_arba]
+    encontradas_df = arba_df[coincidencias_arba]
+
+    print(f"Cantidad No encontradas:{
+          no_encontradas_df['cuit'].count()}")  # No estan
+
+    print(f"Cantidad encontradas:{encontradas_df['cuit'].count()}")  # Estan
+
+    try:
+        with pd.ExcelWriter('resultados_arba.xlsx', engine='openpyxl') as writer:
+            # Sheet para Percepciones No Encontradas
+            no_encontradas_df.to_excel(
+                writer, sheet_name='Ret No Encontradas', index=False)
+
+            # Sheet para Percepciones Encontradas
+            encontradas_df.to_excel(
+                writer, sheet_name='Ret Encontradas', index=False)
+
+            print('Archivos Generados!')
+        time.sleep(1)
+    except BaseException as e:
+        time.sleep(10)
+        raise e
+    print(f'Tomó: {int(time.time() - start)} Segundos')
+
+
+def handle_search_stafe_df(cleaned_imputaciones_df: pd.DataFrame, stafe_df: pd.DataFrame) -> None:
+    start = time.time()
+
+    coincidencias_stafe = (stafe_df['Importe'].isin(cleaned_imputaciones_df['Debe']) |
+                           stafe_df['Importe'].isin(cleaned_imputaciones_df['Haber']))
+
+    no_encontradas_df = stafe_df[~coincidencias_stafe]
+    encontradas_df = stafe_df[coincidencias_stafe]
+
+    print(f"Cantidad No encontradas:{
+          no_encontradas_df['Cuit'].count()}")  # No estan
+
+    print(f"Cantidad encontradas:{encontradas_df['Cuit'].count()}")  # Estan
+
+    try:
+        with pd.ExcelWriter('resultados_santafe.xlsx', engine='openpyxl') as writer:
+            # Sheet para Percepciones No Encontradas
+            no_encontradas_df.to_excel(
+                writer, sheet_name='Ret No Encontradas', index=False)
+
+            # Sheet para Percepciones Encontradas
+            encontradas_df.to_excel(
+                writer, sheet_name='Ret Encontradas', index=False)
+
+            print('Archivos Generados!')
+        time.sleep(1)
+    except BaseException as e:
+        time.sleep(10)
+        raise e
+    print(f'Tomó: {int(time.time() - start)} Segundos')
+
+
 newest_imputaciones_file = get_newest_file(FILE_PREFIXES['imputaciones'])
-imputaciones_df: pd.DataFrame = pd.read_csv(newest_imputaciones_file, sep=';', encoding='ISO8859-1', date_format=DATE_FORMAT)
+imputaciones_df: pd.DataFrame = pd.read_csv(
+    newest_imputaciones_file, sep=';', encoding='latin-1', date_format=DATE_FORMAT)
+cleaned_imputaciones_df = handle_imputaciones_df(imputaciones_df)
 match_df: pd.DataFrame = pd.DataFrame()
 
 match choice:
     case 1:
-        newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
-        imputaciones_df = pd.read_csv(newest_imputaciones_file, sep=';', encoding='ISO8859-1', date_format=DATE_FORMAT)
+        newest_percepciones_file = get_newest_file(
+            FILE_PREFIXES['percepciones'])
+        percepciones_df = pd.read_excel(newest_percepciones_file, skiprows=2)
+        handle_search_percepciones_df(cleaned_imputaciones_df, percepciones_df)
+
     case 2:
         newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
         retenciones_df = pd.read_excel(newest_retenciones_file, skiprows=2)
+        handle_search_retenciones_df(cleaned_imputaciones_df, retenciones_df)
     case 3:
         newest_arba_file = get_newest_file(FILE_PREFIXES['arba'])
+        arba_df = pd.read_excel(newest_arba_file, skiprows=3, header=None, names=[
+            'cuit', 'fecha', 'tipo', 'cond_iva', 'pv', 'no_se', 'monto_total', 'no_se1', 'monto', 'no_se2',
+        ])
+        handle_search_arba_df(cleaned_imputaciones_df, arba_df)
     case 4:
         newest_santafe_file = get_newest_file(FILE_PREFIXES['santafe'])
-        
+        stafe_df = pd.read_excel(newest_santafe_file, skiprows=2)
+        handle_search_stafe_df(cleaned_imputaciones_df, stafe_df)
     case 5:
         newest_ganancias_file = get_newest_file(FILE_PREFIXES['ganancias'])
+        print(newest_ganancias_file)
     case 6:
         newest_sicore_file = get_newest_file(FILE_PREFIXES['sicore'])
+        match_df = pd.read_excel(newest_sicore_file, skiprows=2)
+        print(newest_sicore_file)
+    case _:
+        print('Opcion No Valida')
+
+asddf = pd.read_excel('ARBA.xls')
 
 
-# Timer start
-start = time.time()
-
-
-newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
-
-
-newest_santafe_file = get_newest_file(FILE_PREFIXES['santafe'])
-
-
-
-
-# Importando DataFrames
-
-
-percepciones_df: pd.DataFrame = pd.read_excel(newest_percepciones_file, skiprows=2)
-
-
-    
-# Procesando imputaciones_df
-
-imputaciones_df['Debe'].dtypes
-
-imputaciones_df['Emisión'] = pd.to_datetime(imputaciones_df['Emisión'], format="%d-%m-%Y")
-
-imputaciones_df = imputaciones_df.sort_values(by='Emisión')
-imputaciones_df[['Debe', 'Haber']] = imputaciones_df[['Debe', 'Haber']].map(lambda x : float(str(x).replace('.','').replace(',','.')))
-
-
-imputaciones_df.to_excel('imputaciones_limpio.xlsx', index=False)
-
-# Procesando percepciones_df
-
-percepciones_df['Monto Percibido'] = abs(percepciones_df['Monto Percibido'])
-retenciones_df['Monto Percibido'] = abs(percepciones_df['Monto Percibido'])
-
-percepciones_df = percepciones_df[percepciones_df['Monto Percibido'] > 0]
-retenciones_df = retenciones_df[retenciones_df['Monto Percibido'] > 0]
-
-
-# Buscar coincidencias entre archivo Retencion y Percepcion
-coincidencias_per = percepciones_df['Monto Percibido'].isin(imputaciones_df['Debe'])
-percepciones_df[~coincidencias_per] # No estan
-percepciones_df[coincidencias_per] # Si estan
-
-
-coincidencias_ret = retenciones_df['Monto Retenido'].isin(imputaciones_df['Debe'])
-retenciones_df[~coincidencias_ret] # No estan
-retenciones_df[coincidencias_ret] # Si estan
-
-excedente_imp = imputaciones_df[(~imputaciones_df['Debe'].isin(percepciones_df['Monto Percibido'])) & (~imputaciones_df['Debe'].isin(retenciones_df['Monto Retenido']))]
-excedente_imp = excedente_imp[excedente_imp['Debe'] > 0]
-
-try:
-    with pd.ExcelWriter('resultados.xlsx', engine='openpyxl') as writer:
-        # Sheet para Percepciones No Encontradas
-        percepciones_df[~coincidencias_per].to_excel(writer, sheet_name='Perc No Encontradas', index=False)
-
-        # Sheet para Retenciones No Encontradas
-        retenciones_df[~coincidencias_ret].to_excel(writer, sheet_name='Ret No Encontradas', index=False)
-        
-        # Sheet para los Excendentes
-        excedente_imp.to_excel(writer, sheet_name='Excedentes', index=False)
-        
-        # Sheet para Percepciones Encontradas
-        percepciones_df[coincidencias_per].to_excel(writer, sheet_name='Perc Encontradas', index=False)
-
-        # Sheet para Retenciones Encontradas
-        retenciones_df[coincidencias_ret].to_excel(writer, sheet_name='Ret Encontradas', index=False)
-        
-        print('Archivos Generados!')
-except BaseException as e:
-    raise e
-
-time.sleep(1)
-print(f'{time.time() - start}')
-
-"""
+# print(match_df.columns)
+# print(match_df.dtypes)
