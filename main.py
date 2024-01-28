@@ -179,11 +179,76 @@ def handle_search_stafe_df(cleaned_imputaciones_df: pd.DataFrame, stafe_df: pd.D
     print(f'Tomó: {int(time.time() - start)} Segundos')
 
 
+def handle_search_ganancias_df(cleaned_imputaciones_df: pd.DataFrame, ganancias_df: pd.DataFrame) -> None:
+    start = time.time()
+    coincidencias_ganancias = (ganancias_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Debe']) |
+                               ganancias_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Haber']))
+
+    no_encontradas_df = ganancias_df[~coincidencias_ganancias]
+    encontradas_df = ganancias_df[coincidencias_ganancias]
+
+    print(f"Cantidad No encontradas:{
+          no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # No estan
+
+    print(f"Cantidad encontradas:{
+          encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # Estan
+
+    try:
+        with pd.ExcelWriter('resultados_ganancias.xlsx', engine='openpyxl') as writer:
+            # Sheet para Percepciones No Encontradas
+            no_encontradas_df.to_excel(
+                writer, sheet_name='Ret No Encontradas', index=False)
+
+            # Sheet para Percepciones Encontradas
+            encontradas_df.to_excel(
+                writer, sheet_name='Ret Encontradas', index=False)
+
+            print('Archivos Generados!')
+        time.sleep(1)
+    except BaseException as e:
+        time.sleep(10)
+        raise e
+    print(f'Tomó: {int(time.time() - start)} Segundos')
+
+
+def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd.DataFrame) -> None:
+    start = time.time()
+    coincidencias_sicore = (sicore_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Debe']) |
+                            sicore_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Haber']))
+
+    no_encontradas_df = sicore_df[~coincidencias_sicore]
+    encontradas_df = sicore_df[coincidencias_sicore]
+
+    print(f"Cantidad No encontradas:{
+          no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # No estan
+
+    print(f"Cantidad encontradas:{
+          encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # Estan
+
+    try:
+        with pd.ExcelWriter('resultados_sicore.xlsx', engine='openpyxl') as writer:
+            # Sheet para Percepciones No Encontradas
+            no_encontradas_df.to_excel(
+                writer, sheet_name='Ret No Encontradas', index=False)
+
+            # Sheet para Percepciones Encontradas
+            encontradas_df.to_excel(
+                writer, sheet_name='Ret Encontradas', index=False)
+
+            print('Archivos Generados!')
+        time.sleep(1)
+    except BaseException as e:
+        time.sleep(10)
+        raise e
+    print(f'Tomó: {int(time.time() - start)} Segundos')
+
+
 newest_imputaciones_file = get_newest_file(FILE_PREFIXES['imputaciones'])
 imputaciones_df: pd.DataFrame = pd.read_csv(
     newest_imputaciones_file, sep=';', encoding='latin-1', date_format=DATE_FORMAT)
 cleaned_imputaciones_df = handle_imputaciones_df(imputaciones_df)
 match_df: pd.DataFrame = pd.DataFrame()
+
 
 match choice:
     case 1:
@@ -208,11 +273,12 @@ match choice:
         handle_search_stafe_df(cleaned_imputaciones_df, stafe_df)
     case 5:
         newest_ganancias_file = get_newest_file(FILE_PREFIXES['ganancias'])
-        print(newest_ganancias_file)
+        ganancias_df = pd.read_excel(newest_ganancias_file)
+        handle_search_ganancias_df(cleaned_imputaciones_df, ganancias_df)
     case 6:
         newest_sicore_file = get_newest_file(FILE_PREFIXES['sicore'])
-        match_df = pd.read_excel(newest_sicore_file, skiprows=2)
-        print(newest_sicore_file)
+        sicore_df = pd.read_excel(newest_sicore_file)
+        handle_search_sicore_df(cleaned_imputaciones_df, sicore_df)
     case _:
         print('Opcion No Valida')
 
