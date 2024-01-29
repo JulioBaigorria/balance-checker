@@ -1,17 +1,25 @@
 # Verificar si el entorno virtual está instalado
-if (-not (Test-Path .venv)) {
+$venvPath = ".venv"
+if (-not (Test-Path $venvPath)) {
     Write-Host "Instalando entorno virtual..."
-    python -m venv .venv
+    python -m venv $venvPath
+
+    # Activar el entorno virtual después de la instalación
+    $activateScript = Join-Path $venvPath "Scripts\Activate"
+    cmd /c $activateScript
+
+    # Instalar dependencias desde requirements.txt
+    Write-Host "Instalando dependencias..."
+    python -m pip install -r requirements.txt
+} else {
+    # Activar el entorno virtual si ya está instalado
+    $activateScript = Join-Path $venvPath "Scripts\Activate"
+    cmd /c $activateScript
 }
 
-# Activar el entorno virtual
-.venv\Scripts\Activate
-
-# Instalar dependencias (opcional, dependiendo de tus necesidades)
-# pip install -r requirements.txt
-
 # Ejecutar el archivo main.py
+Write-Host "Ejecutando main.py..."
 python main.py
 
-# Desactivar el entorno virtual al finalizar
-deactivate
+# Sleep
+# Start-Sleep 4
