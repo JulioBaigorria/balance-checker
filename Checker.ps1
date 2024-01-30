@@ -22,4 +22,4 @@ Write-Host "Ejecutando main.py..."
 python main.py
 
 # Sleep
-# Start-Sleep 4
+Start-Sleep 4

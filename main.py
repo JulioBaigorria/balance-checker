@@ -59,8 +59,7 @@ def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepc
     no_encontradas_df = percepciones_df[~coincidencias_per]
     encontradas_df = percepciones_df[coincidencias_per]
 
-    print(f"Cantidad No encontradas:{
-          no_encontradas_df['CUIT'].count()}")  # No estan
+    print(f"Cantidad No encontradas:{no_encontradas_df['CUIT'].count()}")  # No estan
     print(f"Cantidad encontradas:{encontradas_df['CUIT'].count()}")  # No estan
 
     try:
@@ -91,8 +90,7 @@ def handle_search_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, retencio
     no_encontradas_df = retenciones_df[~coincidencias_ret]
     encontradas_df = retenciones_df[coincidencias_ret]
 
-    print(f"Cantidad No encontradas:{
-          no_encontradas_df['CUIT'].count()}")  # No estan
+    print(f"Cantidad No encontradas:{no_encontradas_df['CUIT'].count()}")  # No estan
     print(f"Cantidad encontradas:{encontradas_df['CUIT'].count()}")  # No estan
 
     try:
@@ -124,8 +122,7 @@ def handle_search_arba_df(cleaned_imputaciones_df: pd.DataFrame, arba_df: pd.Dat
     no_encontradas_df = arba_df[~coincidencias_arba]
     encontradas_df = arba_df[coincidencias_arba]
 
-    print(f"Cantidad No encontradas:{
-          no_encontradas_df['cuit'].count()}")  # No estan
+    print(f"Cantidad No encontradas:{no_encontradas_df['cuit'].count()}")  # No estan
 
     print(f"Cantidad encontradas:{encontradas_df['cuit'].count()}")  # Estan
 
@@ -156,8 +153,7 @@ def handle_search_stafe_df(cleaned_imputaciones_df: pd.DataFrame, stafe_df: pd.D
     no_encontradas_df = stafe_df[~coincidencias_stafe]
     encontradas_df = stafe_df[coincidencias_stafe]
 
-    print(f"Cantidad No encontradas:{
-          no_encontradas_df['Cuit'].count()}")  # No estan
+    print(f"Cantidad No encontradas:{no_encontradas_df['Cuit'].count()}")  # No estan
 
     print(f"Cantidad encontradas:{encontradas_df['Cuit'].count()}")  # Estan
 
@@ -187,11 +183,9 @@ def handle_search_ganancias_df(cleaned_imputaciones_df: pd.DataFrame, ganancias_
     no_encontradas_df = ganancias_df[~coincidencias_ganancias]
     encontradas_df = ganancias_df[coincidencias_ganancias]
 
-    print(f"Cantidad No encontradas:{
-          no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # No estan
+    print(f"Cantidad No encontradas:{no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # No estan
 
-    print(f"Cantidad encontradas:{
-          encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # Estan
+    print(f"Cantidad encontradas:{encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # Estan
 
     try:
         with pd.ExcelWriter('resultados_ganancias.xlsx', engine='openpyxl') as writer:
@@ -219,11 +213,9 @@ def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd
     no_encontradas_df = sicore_df[~coincidencias_sicore]
     encontradas_df = sicore_df[coincidencias_sicore]
 
-    print(f"Cantidad No encontradas:{
-          no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # No estan
+    print(f"Cantidad No encontradas:{no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # No estan
 
-    print(f"Cantidad encontradas:{
-          encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # Estan
+    print(f"Cantidad encontradas:{encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # Estan
 
     try:
         with pd.ExcelWriter('resultados_sicore.xlsx', engine='openpyxl') as writer:
