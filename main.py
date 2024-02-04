@@ -5,7 +5,7 @@ import pandas as pd
 
 warnings.simplefilter("ignore")
 
-# Constants
+# Constantes
 DATE_FORMAT = "%d-%m-%Y"
 FLOAT_FORMAT = '%.3f'
 INPUT_DIR = '.'
@@ -26,13 +26,14 @@ FILE_EXTENSIONS3 = '.xls'
 
 OPTION_PREFIXES = {key: value for key,
                    value in FILE_PREFIXES.items() if key != 'imputaciones'}
+
 print("Elige una opción:")
 for idx, option in enumerate(OPTION_PREFIXES.keys(), 1):
     print(f"{idx}. {option}")
 
 choice = int(input("Opción: "))
 
-# Dynamic function to get the latest needed files.
+# Funcion para traer el ultimo archivo
 
 
 def get_newest_file(file_prefix):
@@ -41,8 +42,10 @@ def get_newest_file(file_prefix):
         file_prefix) and (file.endswith(FILE_EXTENSIONS) or file.endswith(FILE_EXTENSIONS2) or file.endswith(FILE_EXTENSIONS3))]
     return max(files, key=lambda f: os.path.getmtime(os.path.join(INPUT_DIR, f)))
 
-# Functions for handling DFs
-# Handling Imputaciones' file
+################### FUNCIONES PARA MANEJAR LOS DISTINTOS ARCHIVOS #########################
+# Se encuentra la logica de cada una de las opciones.
+
+# Imputaciones
 
 
 def handle_imputaciones_df(imputaciones_df: pd.DataFrame) -> pd.DataFrame:
@@ -50,17 +53,24 @@ def handle_imputaciones_df(imputaciones_df: pd.DataFrame) -> pd.DataFrame:
         lambda x: float(str(x).replace('.', '').replace(',', '.')))
     return imputaciones_df
 
+# Percepciones
+
 
 def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepciones_df: pd.DataFrame) -> None:
     start = time.time()
     # Buscar coincidencias de montos en Debe y Haber
     coincidencias_per = (percepciones_df['Monto Percibido'].isin(
         cleaned_imputaciones_df['Debe']) | percepciones_df['Monto Percibido'].isin(cleaned_imputaciones_df['Haber']))
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
+        percepciones_df['Monto Percibido']) & ~cleaned_imputaciones_df['Haber'].isin(percepciones_df['Monto Percibido'])]
     no_encontradas_df = percepciones_df[~coincidencias_per]
     encontradas_df = percepciones_df[coincidencias_per]
 
-    print(f"Cantidad No encontradas:{no_encontradas_df['CUIT'].count()}")  # No estan
-    print(f"Cantidad encontradas:{encontradas_df['CUIT'].count()}")  # No estan
+    print(
+        # No estan
+        f"Cantidad No Encontradas: {no_encontradas_df['CUIT'].count()}")
+    print(f"Cantidad Encontradas:{encontradas_df['CUIT'].count()}")  # Estan
+    print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")  # Sobrantes
 
     try:
         with pd.ExcelWriter('resultados_percepciones.xlsx', engine='openpyxl') as writer:
@@ -71,6 +81,10 @@ def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepc
             # Sheet para Percepciones Encontradas
             encontradas_df.to_excel(
                 writer, sheet_name='Perc Encontradas', index=False)
+
+            # Sheet para Sobrantes
+            sobrantes_df.to_excel(
+                writer, sheet_name='Sobrantes', index=False)
 
             print('Archivos Generados!')
         time.sleep(1)
@@ -86,12 +100,20 @@ def handle_search_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, retencio
     # Buscar coincidencias de montos en Debe y Haber
     coincidencias_ret = (retenciones_df['Monto Retenido'].isin(cleaned_imputaciones_df['Debe']) |
                          retenciones_df['Monto Retenido'].isin(cleaned_imputaciones_df['Haber']))
+    # Se pregunta al reves ya que se devuelve imputaciones como sobrantes
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
+        retenciones_df['Monto Retenido']) & ~cleaned_imputaciones_df['Haber'].isin(retenciones_df['Monto Retenido'])]
 
     no_encontradas_df = retenciones_df[~coincidencias_ret]
     encontradas_df = retenciones_df[coincidencias_ret]
 
-    print(f"Cantidad No encontradas:{no_encontradas_df['CUIT'].count()}")  # No estan
-    print(f"Cantidad encontradas:{encontradas_df['CUIT'].count()}")  # No estan
+    # No estan
+    print(
+        f"Cantidad No Encontradas:{no_encontradas_df['CUIT'].count()}")
+    # Estan
+    print(f"Cantidad Encontradas:{encontradas_df['CUIT'].count()}")
+    # Sobrantes
+    print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")
 
     try:
         with pd.ExcelWriter('resultados_retenciones.xlsx', engine='openpyxl') as writer:
@@ -102,6 +124,10 @@ def handle_search_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, retencio
             # Sheet para Percepciones Encontradas
             encontradas_df.to_excel(
                 writer, sheet_name='Ret Encontradas', index=False)
+
+            # Sheet para Sobrantes
+            sobrantes_df.to_excel(
+                writer, sheet_name='Sobrantes', index=False)
 
             print('Archivos Generados!')
         time.sleep(1)
@@ -116,15 +142,22 @@ def handle_search_arba_df(cleaned_imputaciones_df: pd.DataFrame, arba_df: pd.Dat
     start = time.time()
     arba_df.describe()
 
-    coincidencias_arba = (arba_df['monto'].isin(cleaned_imputaciones_df['Debe']) |
-                          arba_df['monto'].isin(cleaned_imputaciones_df['Haber']))
+    coincidencias_arba = (arba_df['monto'].isin(
+        cleaned_imputaciones_df['Debe']) | arba_df['monto'].isin(cleaned_imputaciones_df['Haber']))
+
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
+        arba_df['monto']) & ~cleaned_imputaciones_df['Haber'].isin(arba_df['monto'])]
 
     no_encontradas_df = arba_df[~coincidencias_arba]
     encontradas_df = arba_df[coincidencias_arba]
 
-    print(f"Cantidad No encontradas:{no_encontradas_df['cuit'].count()}")  # No estan
-
-    print(f"Cantidad encontradas:{encontradas_df['cuit'].count()}")  # Estan
+    # No estan
+    print(
+        f"Cantidad No encontradas:{no_encontradas_df['cuit'].count()}")
+    # Estan
+    print(f"Cantidad encontradas:{encontradas_df['cuit'].count()}")
+    # Sobrantes
+    print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")
 
     try:
         with pd.ExcelWriter('resultados_arba.xlsx', engine='openpyxl') as writer:
@@ -135,6 +168,10 @@ def handle_search_arba_df(cleaned_imputaciones_df: pd.DataFrame, arba_df: pd.Dat
             # Sheet para Percepciones Encontradas
             encontradas_df.to_excel(
                 writer, sheet_name='Ret Encontradas', index=False)
+
+            # Sheet para Sobrantes
+            sobrantes_df.to_excel(
+                writer, sheet_name='Sobrantes', index=False)
 
             print('Archivos Generados!')
         time.sleep(1)
@@ -150,12 +187,21 @@ def handle_search_stafe_df(cleaned_imputaciones_df: pd.DataFrame, stafe_df: pd.D
     coincidencias_stafe = (stafe_df['Importe'].isin(cleaned_imputaciones_df['Debe']) |
                            stafe_df['Importe'].isin(cleaned_imputaciones_df['Haber']))
 
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
+        stafe_df['Importe']) & ~cleaned_imputaciones_df['Haber'].isin(stafe_df['Importe'])]
+
     no_encontradas_df = stafe_df[~coincidencias_stafe]
     encontradas_df = stafe_df[coincidencias_stafe]
 
-    print(f"Cantidad No encontradas:{no_encontradas_df['Cuit'].count()}")  # No estan
+    # No estan
+    print(
+        f"Cantidad No encontradas:{no_encontradas_df['Cuit'].count()}")
 
-    print(f"Cantidad encontradas:{encontradas_df['Cuit'].count()}")  # Estan
+    # Estan
+    print(f"Cantidad encontradas:{encontradas_df['Cuit'].count()}")
+
+    # Sobrantes
+    print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")
 
     try:
         with pd.ExcelWriter('resultados_santafe.xlsx', engine='openpyxl') as writer:
@@ -166,6 +212,10 @@ def handle_search_stafe_df(cleaned_imputaciones_df: pd.DataFrame, stafe_df: pd.D
             # Sheet para Percepciones Encontradas
             encontradas_df.to_excel(
                 writer, sheet_name='Ret Encontradas', index=False)
+
+            # Sheet para Sobrantes
+            sobrantes_df.to_excel(
+                writer, sheet_name='Sobrantes', index=False)
 
             print('Archivos Generados!')
         time.sleep(1)
@@ -180,12 +230,22 @@ def handle_search_ganancias_df(cleaned_imputaciones_df: pd.DataFrame, ganancias_
     coincidencias_ganancias = (ganancias_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Debe']) |
                                ganancias_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Haber']))
 
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
+        ganancias_df['Importe Ret./Perc.']) & ~cleaned_imputaciones_df['Haber'].isin(ganancias_df['Importe Ret./Perc.'])]
+
     no_encontradas_df = ganancias_df[~coincidencias_ganancias]
     encontradas_df = ganancias_df[coincidencias_ganancias]
 
-    print(f"Cantidad No encontradas:{no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # No estan
+    # No estan
+    print(
+        f"Cantidad No encontradas:{no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")
 
-    print(f"Cantidad encontradas:{encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # Estan
+    # Estan
+    print(
+        f"Cantidad encontradas:{encontradas_df['CUIT Agente Ret./Perc.'].count()}")
+
+    # Sobrantes
+    print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")
 
     try:
         with pd.ExcelWriter('resultados_ganancias.xlsx', engine='openpyxl') as writer:
@@ -196,6 +256,10 @@ def handle_search_ganancias_df(cleaned_imputaciones_df: pd.DataFrame, ganancias_
             # Sheet para Percepciones Encontradas
             encontradas_df.to_excel(
                 writer, sheet_name='Ret Encontradas', index=False)
+
+            # Sheet para Sobrantes
+            sobrantes_df.to_excel(
+                writer, sheet_name='Sobrantes', index=False)
 
             print('Archivos Generados!')
         time.sleep(1)
@@ -209,13 +273,21 @@ def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd
     start = time.time()
     coincidencias_sicore = (sicore_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Debe']) |
                             sicore_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Haber']))
+    
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
+        sicore_df['Importe Ret./Perc.']) & ~cleaned_imputaciones_df['Haber'].isin(sicore_df['Importe Ret./Perc.'])]
 
     no_encontradas_df = sicore_df[~coincidencias_sicore]
     encontradas_df = sicore_df[coincidencias_sicore]
-
-    print(f"Cantidad No encontradas:{no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # No estan
-
-    print(f"Cantidad encontradas:{encontradas_df['CUIT Agente Ret./Perc.'].count()}")  # Estan
+    
+    # No estan
+    print(f"Cantidad No encontradas:{no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")
+    
+    # Estan
+    print(f"Cantidad encontradas:{encontradas_df['CUIT Agente Ret./Perc.'].count()}")
+    
+    # Sobrantes
+    print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")
 
     try:
         with pd.ExcelWriter('resultados_sicore.xlsx', engine='openpyxl') as writer:
@@ -226,6 +298,10 @@ def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd
             # Sheet para Percepciones Encontradas
             encontradas_df.to_excel(
                 writer, sheet_name='Ret Encontradas', index=False)
+            
+            # Sheet para Sobrantes
+            sobrantes_df.to_excel(
+                writer, sheet_name='Sobrantes', index=False)
 
             print('Archivos Generados!')
         time.sleep(1)
@@ -273,9 +349,3 @@ match choice:
         handle_search_sicore_df(cleaned_imputaciones_df, sicore_df)
     case _:
         print('Opcion No Valida')
-
-asddf = pd.read_excel('ARBA.xls')
-
-
-# print(match_df.columns)
-# print(match_df.dtypes)
