@@ -19,7 +19,7 @@ FILE_PREFIXES = {
     'ganancias': 'GANANCIAS SUFRIDAS',
     'sicore': 'SICORE RET Y PERC IVA',
 }
-
+TOLERANCIA = 1
 FILE_EXTENSIONS = '.csv'
 FILE_EXTENSIONS2 = '.xlsx'
 FILE_EXTENSIONS3 = '.xls'
@@ -60,9 +60,9 @@ def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepc
     start = time.time()
     # Buscar coincidencias de montos en Debe y Haber
     coincidencias_per = (percepciones_df['Monto Percibido'].isin(
-        cleaned_imputaciones_df['Debe']) | percepciones_df['Monto Percibido'].isin(cleaned_imputaciones_df['Haber']))
+        cleaned_imputaciones_df['Debe']) | percepciones_df['Monto Percibido'].isin(-1*cleaned_imputaciones_df['Haber']))
     sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        percepciones_df['Monto Percibido']) & ~cleaned_imputaciones_df['Haber'].isin(percepciones_df['Monto Percibido'])]
+        percepciones_df['Monto Percibido']) & ~(-1*cleaned_imputaciones_df['Haber']).isin(percepciones_df['Monto Percibido'])]
     no_encontradas_df = percepciones_df[~coincidencias_per]
     encontradas_df = percepciones_df[coincidencias_per]
 
@@ -99,10 +99,10 @@ def handle_search_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, retencio
     start = time.time()
     # Buscar coincidencias de montos en Debe y Haber
     coincidencias_ret = (retenciones_df['Monto Retenido'].isin(cleaned_imputaciones_df['Debe']) |
-                         retenciones_df['Monto Retenido'].isin(cleaned_imputaciones_df['Haber']))
+                         retenciones_df['Monto Retenido'].isin(-1*cleaned_imputaciones_df['Haber']))
     # Se pregunta al reves ya que se devuelve imputaciones como sobrantes
     sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        retenciones_df['Monto Retenido']) & ~cleaned_imputaciones_df['Haber'].isin(retenciones_df['Monto Retenido'])]
+        retenciones_df['Monto Retenido']) & ~(-1*cleaned_imputaciones_df['Haber']).isin(retenciones_df['Monto Retenido'])]
 
     no_encontradas_df = retenciones_df[~coincidencias_ret]
     encontradas_df = retenciones_df[coincidencias_ret]
@@ -143,10 +143,10 @@ def handle_search_arba_df(cleaned_imputaciones_df: pd.DataFrame, arba_df: pd.Dat
     arba_df.describe()
 
     coincidencias_arba = (arba_df['monto'].isin(
-        cleaned_imputaciones_df['Debe']) | arba_df['monto'].isin(cleaned_imputaciones_df['Haber']))
+        cleaned_imputaciones_df['Debe']) | arba_df['monto'].isin(-1*cleaned_imputaciones_df['Haber']))
 
     sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        arba_df['monto']) & ~cleaned_imputaciones_df['Haber'].isin(arba_df['monto'])]
+        arba_df['monto']) & ~(-1*cleaned_imputaciones_df['Haber']).isin(arba_df['monto'])]
 
     no_encontradas_df = arba_df[~coincidencias_arba]
     encontradas_df = arba_df[coincidencias_arba]
@@ -188,7 +188,7 @@ def handle_search_stafe_df(cleaned_imputaciones_df: pd.DataFrame, stafe_df: pd.D
                            stafe_df['Importe'].isin(cleaned_imputaciones_df['Haber']))
 
     sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        stafe_df['Importe']) & ~cleaned_imputaciones_df['Haber'].isin(stafe_df['Importe'])]
+        stafe_df['Importe']) & ~(cleaned_imputaciones_df['Haber']).isin(stafe_df['Importe'])]
 
     no_encontradas_df = stafe_df[~coincidencias_stafe]
     encontradas_df = stafe_df[coincidencias_stafe]
@@ -228,10 +228,10 @@ def handle_search_stafe_df(cleaned_imputaciones_df: pd.DataFrame, stafe_df: pd.D
 def handle_search_ganancias_df(cleaned_imputaciones_df: pd.DataFrame, ganancias_df: pd.DataFrame) -> None:
     start = time.time()
     coincidencias_ganancias = (ganancias_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Debe']) |
-                               ganancias_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Haber']))
+                               ganancias_df['Importe Ret./Perc.'].isin(-1*cleaned_imputaciones_df['Haber']))
 
     sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        ganancias_df['Importe Ret./Perc.']) & ~cleaned_imputaciones_df['Haber'].isin(ganancias_df['Importe Ret./Perc.'])]
+        ganancias_df['Importe Ret./Perc.']) & ~(-1*cleaned_imputaciones_df['Haber']).isin(ganancias_df['Importe Ret./Perc.'])]
 
     no_encontradas_df = ganancias_df[~coincidencias_ganancias]
     encontradas_df = ganancias_df[coincidencias_ganancias]
@@ -272,20 +272,22 @@ def handle_search_ganancias_df(cleaned_imputaciones_df: pd.DataFrame, ganancias_
 def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd.DataFrame) -> None:
     start = time.time()
     coincidencias_sicore = (sicore_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Debe']) |
-                            sicore_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Haber']))
-    
+                            sicore_df['Importe Ret./Perc.'].isin(-1*cleaned_imputaciones_df['Haber']))
+
     sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        sicore_df['Importe Ret./Perc.']) & ~cleaned_imputaciones_df['Haber'].isin(sicore_df['Importe Ret./Perc.'])]
+        sicore_df['Importe Ret./Perc.']) & ~(-1*cleaned_imputaciones_df['Haber']).isin(sicore_df['Importe Ret./Perc.'])]
 
     no_encontradas_df = sicore_df[~coincidencias_sicore]
     encontradas_df = sicore_df[coincidencias_sicore]
-    
+
     # No estan
-    print(f"Cantidad No encontradas:{no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")
-    
+    print(f"Cantidad No encontradas:{
+          no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")
+
     # Estan
-    print(f"Cantidad encontradas:{encontradas_df['CUIT Agente Ret./Perc.'].count()}")
-    
+    print(f"Cantidad encontradas:{
+          encontradas_df['CUIT Agente Ret./Perc.'].count()}")
+
     # Sobrantes
     print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")
 
@@ -298,7 +300,7 @@ def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd
             # Sheet para Percepciones Encontradas
             encontradas_df.to_excel(
                 writer, sheet_name='Ret Encontradas', index=False)
-            
+
             # Sheet para Sobrantes
             sobrantes_df.to_excel(
                 writer, sheet_name='Sobrantes', index=False)
