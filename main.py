@@ -281,12 +281,12 @@ def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd
     encontradas_df = sicore_df[coincidencias_sicore]
 
     # No estan
-    print(f"Cantidad No encontradas:{
-          no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")
+    print(
+        f"Cantidad No encontradas:{no_encontradas_df['CUIT Agente Ret./Perc.'].count()}")
 
     # Estan
-    print(f"Cantidad encontradas:{
-          encontradas_df['CUIT Agente Ret./Perc.'].count()}")
+    print(
+        f"Cantidad encontradas:{encontradas_df['CUIT Agente Ret./Perc.'].count()}")
 
     # Sobrantes
     print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")
