@@ -14,10 +14,11 @@ FILE_PREFIXES = {
     'imputaciones': 'imputacionesPo',
     'percepciones': 'SrcPercepciones',
     'retenciones': 'SrcRetenciones',
-    'arba': 'ARBA',
+    'arba': 'planillaDeducciones',
     'santafe': 'COPRIB - IIBB RET',
     'ganancias': 'GANANCIAS SUFRIDAS',
     'sicore': 'SICORE RET Y PERC IVA',
+    'percepciones_y_retenciones': ['SrcPercepciones', 'SrcRetenciones']
 }
 TOLERANCIA = 1
 FILE_EXTENSIONS = '.csv'
@@ -58,13 +59,22 @@ def handle_imputaciones_df(imputaciones_df: pd.DataFrame) -> pd.DataFrame:
 
 def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepciones_df: pd.DataFrame) -> None:
     start = time.time()
-    # Buscar coincidencias de montos en Debe y Haber
-    coincidencias_per = (percepciones_df['Monto Percibido'].isin(
-        cleaned_imputaciones_df['Debe']) | percepciones_df['Monto Percibido'].isin(-1*cleaned_imputaciones_df['Haber']))
-    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        percepciones_df['Monto Percibido']) & ~(-1*cleaned_imputaciones_df['Haber']).isin(percepciones_df['Monto Percibido'])]
-    no_encontradas_df = percepciones_df[~coincidencias_per]
-    encontradas_df = percepciones_df[coincidencias_per]
+    cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
+
+    encontradas_df = percepciones_df[
+        percepciones_df['Monto Percibido'].apply(
+            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
+                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
+            ).any()
+        )
+    ]
+    cleaned_imputaciones_df['Haber'] = cleaned_imputaciones_df['Haber'] * -1
+
+    no_encontradas_df = percepciones_df[~percepciones_df.index.isin(
+        encontradas_df.index)]
+
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(
+        encontradas_df.index)]
 
     print(
         # No estan
@@ -97,15 +107,22 @@ def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepc
 
 def handle_search_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, retenciones_df: pd.DataFrame) -> None:
     start = time.time()
-    # Buscar coincidencias de montos en Debe y Haber
-    coincidencias_ret = (retenciones_df['Monto Retenido'].isin(cleaned_imputaciones_df['Debe']) |
-                         retenciones_df['Monto Retenido'].isin(-1*cleaned_imputaciones_df['Haber']))
-    # Se pregunta al reves ya que se devuelve imputaciones como sobrantes
-    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        retenciones_df['Monto Retenido']) & ~(-1*cleaned_imputaciones_df['Haber']).isin(retenciones_df['Monto Retenido'])]
+    cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
 
-    no_encontradas_df = retenciones_df[~coincidencias_ret]
-    encontradas_df = retenciones_df[coincidencias_ret]
+    encontradas_df = retenciones_df[
+        retenciones_df['Monto Retenido'].apply(
+            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
+                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
+            ).any()
+        )
+    ]
+    cleaned_imputaciones_df['Haber'] = cleaned_imputaciones_df['Haber'] * -1
+
+    no_encontradas_df = retenciones_df[~retenciones_df.index.isin(
+        encontradas_df.index)]
+
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(
+        encontradas_df.index)]
 
     # No estan
     print(
@@ -140,16 +157,21 @@ def handle_search_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, retencio
 
 def handle_search_arba_df(cleaned_imputaciones_df: pd.DataFrame, arba_df: pd.DataFrame) -> None:
     start = time.time()
-    arba_df.describe()
+    cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
 
-    coincidencias_arba = (arba_df['monto'].isin(
-        cleaned_imputaciones_df['Debe']) | arba_df['monto'].isin(-1*cleaned_imputaciones_df['Haber']))
+    encontradas_df = arba_df[
+        arba_df['monto'].apply(
+            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
+                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
+            ).any()
+        )
+    ]
+    cleaned_imputaciones_df['Haber'] = cleaned_imputaciones_df['Haber'] * -1
 
-    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        arba_df['monto']) & ~(-1*cleaned_imputaciones_df['Haber']).isin(arba_df['monto'])]
+    no_encontradas_df = arba_df[~arba_df.index.isin(encontradas_df.index)]
 
-    no_encontradas_df = arba_df[~coincidencias_arba]
-    encontradas_df = arba_df[coincidencias_arba]
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(
+        encontradas_df.index)]
 
     # No estan
     print(
@@ -183,15 +205,21 @@ def handle_search_arba_df(cleaned_imputaciones_df: pd.DataFrame, arba_df: pd.Dat
 
 def handle_search_stafe_df(cleaned_imputaciones_df: pd.DataFrame, stafe_df: pd.DataFrame) -> None:
     start = time.time()
+    cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
 
-    coincidencias_stafe = (stafe_df['Importe'].isin(cleaned_imputaciones_df['Debe']) |
-                           stafe_df['Importe'].isin(cleaned_imputaciones_df['Haber']))
+    encontradas_df = stafe_df[
+        stafe_df['Importe'].apply(
+            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
+                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
+            ).any()
+        )
+    ]
+    cleaned_imputaciones_df['Haber'] = cleaned_imputaciones_df['Haber'] * -1
 
-    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        stafe_df['Importe']) & ~(cleaned_imputaciones_df['Haber']).isin(stafe_df['Importe'])]
+    no_encontradas_df = stafe_df[~stafe_df.index.isin(encontradas_df.index)]
 
-    no_encontradas_df = stafe_df[~coincidencias_stafe]
-    encontradas_df = stafe_df[coincidencias_stafe]
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(
+        encontradas_df.index)]
 
     # No estan
     print(
@@ -227,14 +255,22 @@ def handle_search_stafe_df(cleaned_imputaciones_df: pd.DataFrame, stafe_df: pd.D
 
 def handle_search_ganancias_df(cleaned_imputaciones_df: pd.DataFrame, ganancias_df: pd.DataFrame) -> None:
     start = time.time()
-    coincidencias_ganancias = (ganancias_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Debe']) |
-                               ganancias_df['Importe Ret./Perc.'].isin(-1*cleaned_imputaciones_df['Haber']))
+    cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
 
-    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        ganancias_df['Importe Ret./Perc.']) & ~(-1*cleaned_imputaciones_df['Haber']).isin(ganancias_df['Importe Ret./Perc.'])]
+    encontradas_df = ganancias_df[
+        ganancias_df['Importe Ret./Perc.'].apply(
+            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
+                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
+            ).any()
+        )
+    ]
+    cleaned_imputaciones_df['Haber'] = cleaned_imputaciones_df['Haber'] * -1
 
-    no_encontradas_df = ganancias_df[~coincidencias_ganancias]
-    encontradas_df = ganancias_df[coincidencias_ganancias]
+    no_encontradas_df = ganancias_df[~ganancias_df.index.isin(
+        encontradas_df.index)]
+
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(
+        encontradas_df.index)]
 
     # No estan
     print(
@@ -271,14 +307,21 @@ def handle_search_ganancias_df(cleaned_imputaciones_df: pd.DataFrame, ganancias_
 
 def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd.DataFrame) -> None:
     start = time.time()
-    coincidencias_sicore = (sicore_df['Importe Ret./Perc.'].isin(cleaned_imputaciones_df['Debe']) |
-                            sicore_df['Importe Ret./Perc.'].isin(-1*cleaned_imputaciones_df['Haber']))
+    cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
 
-    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df['Debe'].isin(
-        sicore_df['Importe Ret./Perc.']) & ~(-1*cleaned_imputaciones_df['Haber']).isin(sicore_df['Importe Ret./Perc.'])]
+    encontradas_df = sicore_df[
+        sicore_df['Importe Ret./Perc.'].apply(
+            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
+                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
+            ).any()
+        )
+    ]
+    cleaned_imputaciones_df['Haber'] = cleaned_imputaciones_df['Haber'] * -1
 
-    no_encontradas_df = sicore_df[~coincidencias_sicore]
-    encontradas_df = sicore_df[coincidencias_sicore]
+    no_encontradas_df = sicore_df[~sicore_df.index.isin(encontradas_df.index)]
+
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(
+        encontradas_df.index)]
 
     # No estan
     print(
@@ -312,6 +355,73 @@ def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd
         raise e
     print(f'Tomó: {int(time.time() - start)} Segundos')
 
+def handle_search_percepciones_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, percepciones_df: pd.DataFrame, retenciones_df: pd.DataFrame) -> None:
+    start = time.time()
+    cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
+
+    encontradas_per_df = percepciones_df[
+        percepciones_df['Monto Percibido'].apply(
+            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
+                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
+            ).any()
+        )
+    ]
+    
+    encontradas_ret_df = retenciones_df[
+        retenciones_df['Monto Retenido'].apply(
+            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
+                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
+            ).any()
+        )
+    ]
+    cleaned_imputaciones_df['Haber'] = cleaned_imputaciones_df['Haber'] * -1
+
+    no_encontradas_per = percepciones_df[~percepciones_df.index.isin(encontradas_per_df.index)]
+
+    no_encontradas_ret = percepciones_df[~percepciones_df.index.isin(encontradas_ret_df.index)]
+
+    # Filtrar sobrantes que no están en ni 'percepciones_df' ni 'retenciones_df'
+    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(encontradas_per_df.index) & ~cleaned_imputaciones_df.index.isin(encontradas_ret_df.index)]
+
+    print(
+        # No estan
+        f"Cantidad Percepciones No Encontradas: {no_encontradas_per['CUIT'].count()}")
+    print(f"Cantidad Percepciones Encontradas:{encontradas_per_df['CUIT'].count()}")  # Estan
+    print(
+        # No estan
+        f"Cantidad Retenciones No Encontradas: {no_encontradas_ret['CUIT'].count()}")
+    print(f"Cantidad Retenciones Encontradas:{encontradas_ret_df['CUIT'].count()}")  # Estan
+    print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")  # Sobrantes
+
+    try:
+        with pd.ExcelWriter('resultados_percepciones_y_retenciones.xlsx', engine='openpyxl') as writer:
+            # Sheet para Percepciones No Encontradas
+            no_encontradas_per.to_excel(
+                writer, sheet_name='Perc No Encontradas', index=False)
+
+            # Sheet para Percepciones Encontradas
+            encontradas_per_df.to_excel(
+                writer, sheet_name='Perc Encontradas', index=False)
+
+            # Sheet para Percepciones No Encontradas
+            no_encontradas_ret.to_excel(
+                writer, sheet_name='Ret No Encontradas', index=False)
+
+            # Sheet para Percepciones Encontradas
+            encontradas_ret_df.to_excel(
+                writer, sheet_name='Ret Encontradas', index=False)
+            
+            # Sheet para Sobrantes
+            sobrantes_df.to_excel(
+                writer, sheet_name='Sobrantes', index=False)
+
+            print('Archivos Generados!')
+        time.sleep(1)
+    except BaseException as e:
+        time.sleep(10)
+        raise e
+
+    print(f'Tomó: {int(time.time() - start)} Segundos')
 
 newest_imputaciones_file = get_newest_file(FILE_PREFIXES['imputaciones'])
 imputaciones_df: pd.DataFrame = pd.read_csv(
@@ -326,7 +436,6 @@ match choice:
             FILE_PREFIXES['percepciones'])
         percepciones_df = pd.read_excel(newest_percepciones_file, skiprows=2)
         handle_search_percepciones_df(cleaned_imputaciones_df, percepciones_df)
-
     case 2:
         newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
         retenciones_df = pd.read_excel(newest_retenciones_file, skiprows=2)
@@ -349,5 +458,11 @@ match choice:
         newest_sicore_file = get_newest_file(FILE_PREFIXES['sicore'])
         sicore_df = pd.read_excel(newest_sicore_file)
         handle_search_sicore_df(cleaned_imputaciones_df, sicore_df)
+    case 7:
+        newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
+        newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
+        percepciones_df = pd.read_excel(newest_percepciones_file, skiprows=2)
+        retenciones_df = pd.read_excel(newest_retenciones_file, skiprows=2)
+        handle_search_percepciones_retenciones_df(cleaned_imputaciones_df, percepciones_df, retenciones_df)
     case _:
         print('Opcion No Valida')
