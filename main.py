@@ -20,7 +20,7 @@ FILE_PREFIXES = {
     'sicore': 'SICORE RET Y PERC IVA',
     'percepciones_y_retenciones': ['SrcPercepciones', 'SrcRetenciones']
 }
-TOLERANCIA = 1
+TOLERANCIA = 10
 FILE_EXTENSIONS = '.csv'
 FILE_EXTENSIONS2 = '.xlsx'
 FILE_EXTENSIONS3 = '.xls'
@@ -378,7 +378,7 @@ def handle_search_percepciones_retenciones_df(cleaned_imputaciones_df: pd.DataFr
 
     no_encontradas_per = percepciones_df[~percepciones_df.index.isin(encontradas_per_df.index)]
 
-    no_encontradas_ret = percepciones_df[~percepciones_df.index.isin(encontradas_ret_df.index)]
+    no_encontradas_ret = retenciones_df[~retenciones_df.index.isin(encontradas_ret_df.index)]
 
     # Filtrar sobrantes que no están en ni 'percepciones_df' ni 'retenciones_df'
     sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(encontradas_per_df.index) & ~cleaned_imputaciones_df.index.isin(encontradas_ret_df.index)]
