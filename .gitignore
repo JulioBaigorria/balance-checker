@@ -24,8 +24,8 @@ target/
 dist/
 
 # Text Files
-#*.csv
-#*.xlsx
+*.csv
+*.xlsx
 
 # JetBrains IDE
 .idea/

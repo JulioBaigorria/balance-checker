@@ -14,13 +14,13 @@ FILE_PREFIXES = {
     'imputaciones': 'imputacionesPo',
     'percepciones': 'SrcPercepciones',
     'retenciones': 'SrcRetenciones',
-    'arba': 'planillaDeducciones',
-    'santafe': 'COPRIB - IIBB RET',
-    'ganancias': 'GANANCIAS SUFRIDAS',
-    'sicore': 'SICORE RET Y PERC IVA',
+    #'arba': 'planillaDeducciones',
+    #'santafe': 'COPRIB - IIBB RET',
+    #'ganancias': 'GANANCIAS SUFRIDAS',
+    #'sicore': 'SICORE RET Y PERC IVA',
     'percepciones_y_retenciones': ['SrcPercepciones', 'SrcRetenciones']
 }
-TOLERANCIA = 10
+TOLERANCIA = 1
 FILE_EXTENSIONS = '.csv'
 FILE_EXTENSIONS2 = '.xlsx'
 FILE_EXTENSIONS3 = '.xls'
@@ -56,7 +56,6 @@ def handle_imputaciones_df(imputaciones_df: pd.DataFrame) -> pd.DataFrame:
 
 # Percepciones
 
-
 def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepciones_df: pd.DataFrame) -> None:
     start = time.time()
     cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
@@ -82,6 +81,8 @@ def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepc
     print(f"Cantidad Encontradas:{encontradas_df['CUIT'].count()}")  # Estan
     print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")  # Sobrantes
 
+    print(f"Tolerancia de busqueda:{TOLERANCIA}")
+    
     try:
         with pd.ExcelWriter('resultados_percepciones.xlsx', engine='openpyxl') as writer:
             # Sheet para Percepciones No Encontradas
@@ -131,6 +132,8 @@ def handle_search_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, retencio
     print(f"Cantidad Encontradas:{encontradas_df['CUIT'].count()}")
     # Sobrantes
     print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")
+
+    print(f"Tolerancia de busqueda:{TOLERANCIA}")
 
     try:
         with pd.ExcelWriter('resultados_retenciones.xlsx', engine='openpyxl') as writer:
@@ -355,6 +358,7 @@ def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd
         raise e
     print(f'Tomó: {int(time.time() - start)} Segundos')
 
+
 def handle_search_percepciones_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, percepciones_df: pd.DataFrame, retenciones_df: pd.DataFrame) -> None:
     start = time.time()
     cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
@@ -393,6 +397,7 @@ def handle_search_percepciones_retenciones_df(cleaned_imputaciones_df: pd.DataFr
     print(f"Cantidad Retenciones Encontradas:{encontradas_ret_df['CUIT'].count()}")  # Estan
     print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")  # Sobrantes
 
+    print(f"Tolerancia de busqueda:{TOLERANCIA}")
     try:
         with pd.ExcelWriter('resultados_percepciones_y_retenciones.xlsx', engine='openpyxl') as writer:
             # Sheet para Percepciones No Encontradas
@@ -423,6 +428,7 @@ def handle_search_percepciones_retenciones_df(cleaned_imputaciones_df: pd.DataFr
 
     print(f'Tomó: {int(time.time() - start)} Segundos')
 
+
 newest_imputaciones_file = get_newest_file(FILE_PREFIXES['imputaciones'])
 imputaciones_df: pd.DataFrame = pd.read_csv(
     newest_imputaciones_file, sep=';', encoding='latin-1', date_format=DATE_FORMAT)
@@ -441,6 +447,16 @@ match choice:
         retenciones_df = pd.read_excel(newest_retenciones_file, skiprows=2)
         handle_search_retenciones_df(cleaned_imputaciones_df, retenciones_df)
     case 3:
+        newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
+        newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
+        percepciones_df = pd.read_excel(newest_percepciones_file, skiprows=2)
+        retenciones_df = pd.read_excel(newest_retenciones_file, skiprows=2)
+        handle_search_percepciones_retenciones_df(cleaned_imputaciones_df, percepciones_df, retenciones_df)
+    case _:
+        print('Opcion No Valida')
+
+"""
+case 3:
         newest_arba_file = get_newest_file(FILE_PREFIXES['arba'])
         arba_df = pd.read_excel(newest_arba_file, skiprows=3, header=None, names=[
             'cuit', 'fecha', 'tipo', 'cond_iva', 'pv', 'no_se', 'monto_total', 'no_se1', 'monto', 'no_se2',
@@ -457,12 +473,4 @@ match choice:
     case 6:
         newest_sicore_file = get_newest_file(FILE_PREFIXES['sicore'])
         sicore_df = pd.read_excel(newest_sicore_file)
-        handle_search_sicore_df(cleaned_imputaciones_df, sicore_df)
-    case 7:
-        newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
-        newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
-        percepciones_df = pd.read_excel(newest_percepciones_file, skiprows=2)
-        retenciones_df = pd.read_excel(newest_retenciones_file, skiprows=2)
-        handle_search_percepciones_retenciones_df(cleaned_imputaciones_df, percepciones_df, retenciones_df)
-    case _:
-        print('Opcion No Valida')
+        handle_search_sicore_df(cleaned_imputaciones_df, sicore_df)"""
