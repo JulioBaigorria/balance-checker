@@ -5,7 +5,7 @@ import pandas as pd
 
 warnings.simplefilter("ignore")
 
-# Constantes
+# Constants
 DATE_FORMAT = "%d-%m-%Y"
 FLOAT_FORMAT = '%.3f'
 INPUT_DIR = '.'
@@ -14,13 +14,13 @@ FILE_PREFIXES = {
     'imputaciones': 'imputacionesPo',
     'percepciones': 'SrcPercepciones',
     'retenciones': 'SrcRetenciones',
-    #'arba': 'planillaDeducciones',
-    #'santafe': 'COPRIB - IIBB RET',
-    #'ganancias': 'GANANCIAS SUFRIDAS',
-    #'sicore': 'SICORE RET Y PERC IVA',
+    'arba': 'planillaDeducciones',
+    'santafe': 'COPRIB - IIBB RET',
+    'ganancias': 'GANANCIAS SUFRIDAS',
+    'sicore': 'SICORE RET Y PERC IVA',
     'percepciones_y_retenciones': ['SrcPercepciones', 'SrcRetenciones']
 }
-TOLERANCIA = 1
+TOLERANCIA = 1.0
 FILE_EXTENSIONS = '.csv'
 FILE_EXTENSIONS2 = '.xlsx'
 FILE_EXTENSIONS3 = '.xls'
@@ -56,106 +56,144 @@ def handle_imputaciones_df(imputaciones_df: pd.DataFrame) -> pd.DataFrame:
 
 # Percepciones
 
+
 def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepciones_df: pd.DataFrame) -> None:
     start = time.time()
     cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
+    percepciones_df['Flag'] = False
+    cleaned_imputaciones_df['Flag'] = False
 
-    encontradas_df = percepciones_df[
-        percepciones_df['Monto Percibido'].apply(
-            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
-                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
-            ).any()
-        )
-    ]
-    cleaned_imputaciones_df['Haber'] = cleaned_imputaciones_df['Haber'] * -1
+    # Made List to be able to Flat through loop
 
-    no_encontradas_df = percepciones_df[~percepciones_df.index.isin(
-        encontradas_df.index)]
+    list_percepciones_df = percepciones_df.values
+    list_cleaned_imputaciones_df = cleaned_imputaciones_df.values
 
-    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(
-        encontradas_df.index)]
+    for i in list_cleaned_imputaciones_df:
+        for p in list_percepciones_df:
+            if abs(i[5] - p[13]) <= TOLERANCIA and i[8] == False and p[17] == False:
+                i[8] = True
+                p[17] = True
 
+            elif abs(i[6] - p[13]) <= TOLERANCIA and i[8] == False and p[17] == False:
+                i[8] = True
+                p[17] = True
+
+    df_resultado_per = pd.DataFrame(
+        data=list_percepciones_df, columns=percepciones_df.columns)
+
+    df_resultado_imputaciones_sobrantes = pd.DataFrame(
+        data=list_cleaned_imputaciones_df, columns=cleaned_imputaciones_df.columns)
+
+    # Percepciones
     print(
         # No estan
-        f"Cantidad No Encontradas: {no_encontradas_df['CUIT'].count()}")
-    print(f"Cantidad Encontradas:{encontradas_df['CUIT'].count()}")  # Estan
-    print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")  # Sobrantes
+        f"Cantidad Percepciones No Encontradas: {df_resultado_per['Flag'][df_resultado_per['Flag'] == False].count()}")
+    print(
+        # Estan
+        f"Cantidad Percepciones Encontradas:{df_resultado_per['Flag'][df_resultado_per['Flag']].count()}")
+    # Sobrantes
+    print(
+        f"Cantidad Imputaciones Integra:{df_resultado_imputaciones_sobrantes['Flag'].count()}")
+    print(
+        f"Cantidad Sobrantes:{df_resultado_imputaciones_sobrantes['Flag'][df_resultado_imputaciones_sobrantes['Flag'] == False].count()}")
 
-    print(f"Tolerancia de busqueda:{TOLERANCIA}")
-    
+    print(
+        f"Tolerancia de busqueda:{TOLERANCIA}")
     try:
         with pd.ExcelWriter('resultados_percepciones.xlsx', engine='openpyxl') as writer:
             # Sheet para Percepciones No Encontradas
-            no_encontradas_df.to_excel(
+            df_resultado_per[df_resultado_per['Flag'] == False].to_excel(
                 writer, sheet_name='Perc No Encontradas', index=False)
 
             # Sheet para Percepciones Encontradas
-            encontradas_df.to_excel(
+            df_resultado_per[df_resultado_per['Flag']].to_excel(
                 writer, sheet_name='Perc Encontradas', index=False)
 
             # Sheet para Sobrantes
-            sobrantes_df.to_excel(
+            df_resultado_imputaciones_sobrantes[df_resultado_imputaciones_sobrantes['Flag'] == False].to_excel(
                 writer, sheet_name='Sobrantes', index=False)
 
             print('Archivos Generados!')
-        time.sleep(1)
+            print(f'Tomó: {int(time.time() - start)} Segundos')
+        time.sleep(5)
     except BaseException as e:
         time.sleep(10)
         raise e
-
-    print(f'Tomó: {int(time.time() - start)} Segundos')
 
 
 def handle_search_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, retenciones_df: pd.DataFrame) -> None:
     start = time.time()
     cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
 
-    encontradas_df = retenciones_df[
-        retenciones_df['Monto Retenido'].apply(
-            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
-                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
-            ).any()
-        )
-    ]
-    cleaned_imputaciones_df['Haber'] = cleaned_imputaciones_df['Haber'] * -1
+    retenciones_df['Flag'] = False
+    cleaned_imputaciones_df['Flag'] = False
 
-    no_encontradas_df = retenciones_df[~retenciones_df.index.isin(
-        encontradas_df.index)]
+    list_retenciones_df = retenciones_df.values
+    list_cleaned_imputaciones_df = cleaned_imputaciones_df.values
 
-    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(
-        encontradas_df.index)]
+    for k in list_cleaned_imputaciones_df:
+        for r in list_retenciones_df:
+            if abs(k[5] - r[12]) <= TOLERANCIA and k[8] == False and r[18] == False:
+                k[8] = True
+                r[18] = True
+            elif abs(k[6] - r[12]) <= TOLERANCIA and k[8] == False and r[18] == False:
+                k[8] = True
+                r[18] = True
 
-    # No estan
+    df_resultado_ret = pd.DataFrame(
+        data=list_retenciones_df, columns=retenciones_df.columns)
+
+    df_resultado_imputaciones_sobrantes = pd.DataFrame(
+        data=list_cleaned_imputaciones_df, columns=cleaned_imputaciones_df.columns)
+
+    # Test Retenciones
+    # No encontradas
+    df_resultado_ret['Flag'][df_resultado_ret['Flag'] == False].count()
+    # Encontradas
+    df_resultado_ret['Flag'][df_resultado_ret['Flag']].count()
+
+    # Test Sobrantes
+    df_resultado_imputaciones_sobrantes['Flag'][df_resultado_imputaciones_sobrantes['Flag'] == False].count(
+    )
+    df_resultado_imputaciones_sobrantes['Flag'][df_resultado_imputaciones_sobrantes['Flag']].count(
+    )
+
+    # Retenciones
     print(
-        f"Cantidad No Encontradas:{no_encontradas_df['CUIT'].count()}")
-    # Estan
-    print(f"Cantidad Encontradas:{encontradas_df['CUIT'].count()}")
+        # No estan
+        f"Cantidad Retenciones No Encontradas: {df_resultado_ret['Flag'][df_resultado_ret['Flag'] == False].count()}")
+    print(
+        # Estan
+        f"Cantidad Retenciones Encontradas:{df_resultado_ret['Flag'][df_resultado_ret['Flag']].count()}")
     # Sobrantes
-    print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")
+    print(
+        f"Cantidad Imputaciones Integra:{df_resultado_imputaciones_sobrantes['Flag'].count()}")
+    print(
+        f"Cantidad Sobrantes:{df_resultado_imputaciones_sobrantes['Flag'][df_resultado_imputaciones_sobrantes['Flag'] == False].count()}")
 
-    print(f"Tolerancia de busqueda:{TOLERANCIA}")
-
+    print(
+        f"Tolerancia de busqueda:{TOLERANCIA}")
+    
     try:
-        with pd.ExcelWriter('resultados_retenciones.xlsx', engine='openpyxl') as writer:
-            # Sheet para Percepciones No Encontradas
-            no_encontradas_df.to_excel(
+        with pd.ExcelWriter('resultados_percepciones_y_retenciones.xlsx', engine='openpyxl') as writer:
+            # Sheet para Retenciones No Encontradas
+            df_resultado_ret[df_resultado_ret['Flag'] == False].to_excel(
                 writer, sheet_name='Ret No Encontradas', index=False)
 
-            # Sheet para Percepciones Encontradas
-            encontradas_df.to_excel(
+            # Sheet para Retenciones Encontradas
+            df_resultado_ret[df_resultado_ret['Flag']].to_excel(
                 writer, sheet_name='Ret Encontradas', index=False)
 
             # Sheet para Sobrantes
-            sobrantes_df.to_excel(
+            df_resultado_imputaciones_sobrantes[df_resultado_imputaciones_sobrantes['Flag'] == False].to_excel(
                 writer, sheet_name='Sobrantes', index=False)
 
             print('Archivos Generados!')
-        time.sleep(1)
+            print(f'Tomó: {int(time.time() - start)} Segundos')
+        time.sleep(5)
     except BaseException as e:
         time.sleep(10)
         raise e
-
-    print(f'Tomó: {int(time.time() - start)} Segundos')
 
 
 def handle_search_arba_df(cleaned_imputaciones_df: pd.DataFrame, arba_df: pd.DataFrame) -> None:
@@ -361,79 +399,122 @@ def handle_search_sicore_df(cleaned_imputaciones_df: pd.DataFrame, sicore_df: pd
 
 def handle_search_percepciones_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, percepciones_df: pd.DataFrame, retenciones_df: pd.DataFrame) -> None:
     start = time.time()
+
     cleaned_imputaciones_df['Haber'] = -cleaned_imputaciones_df['Haber']
 
-    encontradas_per_df = percepciones_df[
-        percepciones_df['Monto Percibido'].apply(
-            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
-                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
-            ).any()
-        )
-    ]
-    
-    encontradas_ret_df = retenciones_df[
-        retenciones_df['Monto Retenido'].apply(
-            lambda x: cleaned_imputaciones_df[['Debe', 'Haber']].apply(
-                lambda col: col.between(x - TOLERANCIA, x + TOLERANCIA).any(), axis=1
-            ).any()
-        )
-    ]
-    cleaned_imputaciones_df['Haber'] = cleaned_imputaciones_df['Haber'] * -1
+    # Flag to avoid duplicates
+    percepciones_df['Flag'] = False
+    retenciones_df['Flag'] = False
+    cleaned_imputaciones_df['Flag'] = False
 
-    no_encontradas_per = percepciones_df[~percepciones_df.index.isin(encontradas_per_df.index)]
+    # Made List to be able to Flat through loop
 
-    no_encontradas_ret = retenciones_df[~retenciones_df.index.isin(encontradas_ret_df.index)]
+    list_percepciones_df = percepciones_df.values
+    list_retenciones_df = retenciones_df.values
+    list_cleaned_imputaciones_df = cleaned_imputaciones_df.values
 
-    # Filtrar sobrantes que no están en ni 'percepciones_df' ni 'retenciones_df'
-    sobrantes_df = cleaned_imputaciones_df[~cleaned_imputaciones_df.index.isin(encontradas_per_df.index) & ~cleaned_imputaciones_df.index.isin(encontradas_ret_df.index)]
+    for i in list_cleaned_imputaciones_df:
+        for p in list_percepciones_df:
+            if abs(i[5] - p[13]) <= TOLERANCIA and i[8] == False and p[17] == False:
+                i[8] = True
+                p[17] = True
 
+            elif abs(i[6] - p[13]) <= TOLERANCIA and i[8] == False and p[17] == False:
+                i[8] = True
+                p[17] = True
+
+    for k in list_cleaned_imputaciones_df:
+        for r in list_retenciones_df:
+            if abs(k[5] - r[12]) <= TOLERANCIA and k[8] == False and r[18] == False:
+                k[8] = True
+                r[18] = True
+            elif abs(k[6] - r[12]) <= TOLERANCIA and k[8] == False and r[18] == False:
+                k[8] = True
+                r[18] = True
+
+    df_resultado_per = pd.DataFrame(
+        data=list_percepciones_df, columns=percepciones_df.columns)
+
+    df_resultado_ret = pd.DataFrame(
+        data=list_retenciones_df, columns=retenciones_df.columns)
+
+    df_resultado_imputaciones_sobrantes = pd.DataFrame(
+        data=list_cleaned_imputaciones_df, columns=cleaned_imputaciones_df.columns)
+
+    # Test Percepciones
+    # No encontradas
+    df_resultado_per['Flag'][df_resultado_per['Flag'] == False].count()
+    # Encontradas
+    df_resultado_per['Flag'][df_resultado_per['Flag']].count()
+
+    # Test Retenciones
+    # No encontradas
+    df_resultado_ret['Flag'][df_resultado_ret['Flag'] == False].count()
+    # Encontradas
+    df_resultado_ret['Flag'][df_resultado_ret['Flag']].count()
+
+    # Test Sobrantes
+    df_resultado_imputaciones_sobrantes['Flag'][df_resultado_imputaciones_sobrantes['Flag'] == False].count(
+    )
+    df_resultado_imputaciones_sobrantes['Flag'][df_resultado_imputaciones_sobrantes['Flag']].count(
+    )
+
+    # Percepciones
     print(
         # No estan
-        f"Cantidad Percepciones No Encontradas: {no_encontradas_per['CUIT'].count()}")
-    print(f"Cantidad Percepciones Encontradas:{encontradas_per_df['CUIT'].count()}")  # Estan
+        f"Cantidad Percepciones No Encontradas: {df_resultado_per['Flag'][df_resultado_per['Flag'] == False].count()}")
+    print(
+        # Estan
+        f"Cantidad Percepciones Encontradas:{df_resultado_per['Flag'][df_resultado_per['Flag']].count()}")
+    # Retenciones
     print(
         # No estan
-        f"Cantidad Retenciones No Encontradas: {no_encontradas_ret['CUIT'].count()}")
-    print(f"Cantidad Retenciones Encontradas:{encontradas_ret_df['CUIT'].count()}")  # Estan
-    print(f"Cantidad Sobrantes:{sobrantes_df.shape[0]}")  # Sobrantes
+        f"Cantidad Retenciones No Encontradas: {df_resultado_ret['Flag'][df_resultado_ret['Flag'] == False].count()}")
+    print(
+        # Estan
+        f"Cantidad Retenciones Encontradas:{df_resultado_ret['Flag'][df_resultado_ret['Flag']].count()}")
+    # Sobrantes
+    print(
+        f"Cantidad Imputaciones Integra:{df_resultado_imputaciones_sobrantes['Flag'].count()}")
+    print(
+        f"Cantidad Sobrantes:{df_resultado_imputaciones_sobrantes['Flag'][df_resultado_imputaciones_sobrantes['Flag'] == False].count()}")
 
-    print(f"Tolerancia de busqueda:{TOLERANCIA}")
+    print(
+        f"Tolerancia de busqueda:{TOLERANCIA}")
     try:
         with pd.ExcelWriter('resultados_percepciones_y_retenciones.xlsx', engine='openpyxl') as writer:
             # Sheet para Percepciones No Encontradas
-            no_encontradas_per.to_excel(
+            df_resultado_per[df_resultado_per['Flag'] == False].to_excel(
                 writer, sheet_name='Perc No Encontradas', index=False)
 
             # Sheet para Percepciones Encontradas
-            encontradas_per_df.to_excel(
+            df_resultado_per[df_resultado_per['Flag']].to_excel(
                 writer, sheet_name='Perc Encontradas', index=False)
 
-            # Sheet para Percepciones No Encontradas
-            no_encontradas_ret.to_excel(
+            # Sheet para Retenciones No Encontradas
+            df_resultado_ret[df_resultado_ret['Flag'] == False].to_excel(
                 writer, sheet_name='Ret No Encontradas', index=False)
 
-            # Sheet para Percepciones Encontradas
-            encontradas_ret_df.to_excel(
+            # Sheet para Retenciones Encontradas
+            df_resultado_ret[df_resultado_ret['Flag']].to_excel(
                 writer, sheet_name='Ret Encontradas', index=False)
-            
+
             # Sheet para Sobrantes
-            sobrantes_df.to_excel(
+            df_resultado_imputaciones_sobrantes[df_resultado_imputaciones_sobrantes['Flag'] == False].to_excel(
                 writer, sheet_name='Sobrantes', index=False)
 
             print('Archivos Generados!')
-        time.sleep(1)
+            print(f'Tomó: {int(time.time() - start)} Segundos')
+        time.sleep(5)
     except BaseException as e:
         time.sleep(10)
         raise e
-
-    print(f'Tomó: {int(time.time() - start)} Segundos')
 
 
 newest_imputaciones_file = get_newest_file(FILE_PREFIXES['imputaciones'])
 imputaciones_df: pd.DataFrame = pd.read_csv(
     newest_imputaciones_file, sep=';', encoding='latin-1', date_format=DATE_FORMAT)
 cleaned_imputaciones_df = handle_imputaciones_df(imputaciones_df)
-match_df: pd.DataFrame = pd.DataFrame()
 
 
 match choice:
@@ -447,16 +528,6 @@ match choice:
         retenciones_df = pd.read_excel(newest_retenciones_file, skiprows=2)
         handle_search_retenciones_df(cleaned_imputaciones_df, retenciones_df)
     case 3:
-        newest_percepciones_file = get_newest_file(FILE_PREFIXES['percepciones'])
-        newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
-        percepciones_df = pd.read_excel(newest_percepciones_file, skiprows=2)
-        retenciones_df = pd.read_excel(newest_retenciones_file, skiprows=2)
-        handle_search_percepciones_retenciones_df(cleaned_imputaciones_df, percepciones_df, retenciones_df)
-    case _:
-        print('Opcion No Valida')
-
-"""
-case 3:
         newest_arba_file = get_newest_file(FILE_PREFIXES['arba'])
         arba_df = pd.read_excel(newest_arba_file, skiprows=3, header=None, names=[
             'cuit', 'fecha', 'tipo', 'cond_iva', 'pv', 'no_se', 'monto_total', 'no_se1', 'monto', 'no_se2',
@@ -473,4 +544,14 @@ case 3:
     case 6:
         newest_sicore_file = get_newest_file(FILE_PREFIXES['sicore'])
         sicore_df = pd.read_excel(newest_sicore_file)
-        handle_search_sicore_df(cleaned_imputaciones_df, sicore_df)"""
+        handle_search_sicore_df(cleaned_imputaciones_df, sicore_df)
+    case 7:
+        newest_percepciones_file = get_newest_file(
+            FILE_PREFIXES['percepciones'])
+        newest_retenciones_file = get_newest_file(FILE_PREFIXES['retenciones'])
+        percepciones_df = pd.read_excel(newest_percepciones_file, skiprows=2)
+        retenciones_df = pd.read_excel(newest_retenciones_file, skiprows=2)
+        handle_search_percepciones_retenciones_df(
+            cleaned_imputaciones_df, percepciones_df, retenciones_df)
+    case _:
+        print('Opcion No Valida')
