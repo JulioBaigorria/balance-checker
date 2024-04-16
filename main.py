@@ -70,12 +70,12 @@ def handle_search_percepciones_df(cleaned_imputaciones_df: pd.DataFrame, percepc
 
     for i in list_cleaned_imputaciones_df:
         for p in list_percepciones_df:
-            if abs(i[5] - p[13]) <= TOLERANCIA and i[8] == False and p[17] == False:
-                i[8] = True
+            if abs(i[5] - p[13]) <= TOLERANCIA and i[9] == False and p[17] == False:
+                i[9] = True
                 p[17] = True
 
-            elif abs(i[6] - p[13]) <= TOLERANCIA and i[8] == False and p[17] == False:
-                i[8] = True
+            elif abs(i[6] - p[13]) <= TOLERANCIA and i[9] == False and p[17] == False:
+                i[9] = True
                 p[17] = True
 
     df_resultado_per = pd.DataFrame(
@@ -133,11 +133,11 @@ def handle_search_retenciones_df(cleaned_imputaciones_df: pd.DataFrame, retencio
 
     for k in list_cleaned_imputaciones_df:
         for r in list_retenciones_df:
-            if abs(k[5] - r[12]) <= TOLERANCIA and k[8] == False and r[18] == False:
-                k[8] = True
+            if abs(k[5] - r[12]) <= TOLERANCIA and k[9] == False and r[17] == False:
+                k[9] = True
                 r[18] = True
-            elif abs(k[6] - r[12]) <= TOLERANCIA and k[8] == False and r[18] == False:
-                k[8] = True
+            elif abs(k[6] - r[12]) <= TOLERANCIA and k[9] == False and r[17] == False:
+                k[9] = True
                 r[18] = True
 
     df_resultado_ret = pd.DataFrame(
@@ -415,21 +415,21 @@ def handle_search_percepciones_retenciones_df(cleaned_imputaciones_df: pd.DataFr
 
     for i in list_cleaned_imputaciones_df:
         for p in list_percepciones_df:
-            if abs(i[5] - p[13]) <= TOLERANCIA and i[8] == False and p[17] == False:
-                i[8] = True
+            if abs(i[5] - p[13]) <= TOLERANCIA and i[9] == False and p[17] == False:
+                i[9] = True
                 p[17] = True
 
-            elif abs(i[6] - p[13]) <= TOLERANCIA and i[8] == False and p[17] == False:
-                i[8] = True
+            elif abs(i[6] - p[13]) <= TOLERANCIA and i[9] == False and p[17] == False:
+                i[9] = True
                 p[17] = True
 
     for k in list_cleaned_imputaciones_df:
         for r in list_retenciones_df:
-            if abs(k[5] - r[12]) <= TOLERANCIA and k[8] == False and r[18] == False:
-                k[8] = True
+            if abs(k[5] - r[12]) <= TOLERANCIA and k[9] == False and r[17] == False:
+                k[9] = True
                 r[18] = True
-            elif abs(k[6] - r[12]) <= TOLERANCIA and k[8] == False and r[18] == False:
-                k[8] = True
+            elif abs(k[6] - r[12]) <= TOLERANCIA and k[9] == False and r[17] == False:
+                k[9] = True
                 r[18] = True
 
     df_resultado_per = pd.DataFrame(
@@ -555,3 +555,6 @@ match choice:
             cleaned_imputaciones_df, percepciones_df, retenciones_df)
     case _:
         print('Opcion No Valida')
+
+
+time.sleep(3)
