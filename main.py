@@ -10,7 +10,6 @@ warnings.simplefilter("ignore")
 # Constantes
 DATE_FORMAT = "%d-%m-%Y"
 FLOAT_FORMAT = '%.3f'
-TOLERANCIA = 1.0
 
 
 """
